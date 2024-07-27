@@ -11,6 +11,7 @@ services:
       - DB_NAME=db_app
       - DB_USER=postgres
       - DB_PASSWORD=password
+      - REDIS_SERVER=redis
     
     command: >
       sh -c 'python manage.py runserver 0.0.0.0:8000'
@@ -24,4 +25,6 @@ services:
     environment:
       - POSTGRES_DB=db_app
       - POSTGRES_PASSWORD=password
-      
+    
+  redis:
+    image: redis:7.2.5-alpine3.20
