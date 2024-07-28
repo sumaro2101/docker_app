@@ -1,5 +1,5 @@
 services:
-  app_servise:
+  app_service:
     build: 
       context: .
     ports:
@@ -11,20 +11,48 @@ services:
       - DB_NAME=db_app
       - DB_USER=postgres
       - DB_PASSWORD=password
-      - REDIS_SERVER=redis
-    
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+
     command: >
       sh -c 'python manage.py runserver 0.0.0.0:8000'
 
     depends_on:
       - postgresql
-  
+      - redis
+
   postgresql:
     image: postgres:16.3-alpine3.20
 
     environment:
       - POSTGRES_DB=db_app
       - POSTGRES_PASSWORD=password
-    
+    hostname: postgresql
+
   redis:
     image: redis:7.2.5-alpine3.20
+    hostname: redis
+    depends_on:
+      - postgresql
+
+  celery:
+    build: 
+      context: .
+    volumes:
+      - ./app_services:/app_services
+    environment:
+      - DB_HOST=postgresql
+      - DB_PORT=5432
+      - DB_NAME=db_app
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    hostname: celery
+    entrypoint: celery
+    command: -A celery_app.app worker --loglevel=info
+    links:
+      - redis
+    depends_on:
+      - app_service
+      - redis
